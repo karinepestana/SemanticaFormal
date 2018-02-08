@@ -15,14 +15,21 @@ mudaVar ((s,i):xs) v n
  | s == v     = ((s,n):xs)
  | otherwise  = (s,i): mudaVar xs v n
 
-data AExp = Num Int|Var String|Som AExp AExp|Sub AExp AExp|Mul AExp AExp
+data N = Num Int
  deriving(Show)
 
-data BExp =	TRUE|FALSE|Not BExp|And BExp BExp|Or BExp BExp|Ig AExp AExp
+data AExp = N|Var String|Som AExp AExp|Sub AExp AExp|Mul AExp AExp
+ deriving(Show)
+
+data TF = TRUE|FALSE
+ deriving(Show)
+
+data BExp =	TF|Not BExp|And BExp BExp|Or BExp BExp|Ig AExp AExp
  deriving(Show)
 
 data CExp = While BExp CExp| If BExp CExp CExp| Seq CExp CExp| Atrib AExp AExp|Skip
- deriving(Show)                
+ deriving(Show)   
+          
 
 interpretA :: (AExp,Estado) -> (AExp,Estado)
 interpretA (a,s) = if isFinalA a then (a,s) else interpretA (aSmallStep (a,s))
@@ -129,5 +136,4 @@ exemploIf :: CExp
 exemploIf = If (And TRUE (Not TRUE)) (Atrib (Var "y") (Num 3)) (Atrib (Var "z") (Num 2))
 exemploWhile :: CExp
 exemploWhile = While (Ig (Var "y") (Var "z")) (Atrib (Var "y") (Num 3))
-
 
