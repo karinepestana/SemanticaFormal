@@ -14,23 +14,41 @@ iTipo (Soma e1 e2) = case (iTipo e1) of
   t->error ((show e2) ++ "Possui tipo " ++ (show t) ++ " Mas deveria possuir tipo Int")
  t->error ((show e1) ++ "Possui tipo " ++ (show t) ++ " Mas deveria possuir tipo Int")
 
-  iTipo (And e1 e2) = case (iTipo e1) of 
- INT -> case(iTipo e2) of
-  INT -> BOOL 
-  t->error ((show e2) ++ "Possui tipo " ++ (show t) ++ " Mas deveria possuir tipo Int")
- t->error ((show e1) ++ "Possui tipo " ++ (show t) ++ " Mas deveria possuir tipo Int")
+iTipo (And e1 e2) = case (iTipo e1) of 
+ BOOL -> case(iTipo e2) of
+  BOOL -> BOOL 
+  x->error ((show e2) ++ "Possui tipo " ++ (show x) ++ " Mas deveria possuir tipo Bool")
+ x->error ((show e1) ++ "Possui tipo " ++ (show x) ++ " Mas deveria possuir tipo Bool")
 
- iTipo (Leq e1 e2) = case (iTipo e1) of 
+iTipo (Leq e1 e2) = case (iTipo e1) of 
  INT -> case(iTipo e2) of
   INT -> BOOL 
-  t->error ((show e2) ++ "Possui tipo " ++ (show t) ++ " Mas deveria possuir tipo Int")
- t->error ((show e1) ++ "Possui tipo " ++ (show t) ++ " Mas deveria possuir tipo Int")
+  a->error ((show e2) ++ "Possui tipo " ++ (show a) ++ " Mas deveria possuir tipo Int")
+ a->error ((show e1) ++ "Possui tipo " ++ (show a) ++ " Mas deveria possuir tipo Int")
  
  
 main = return ()
   
-ex1 :: E
-ex1 = Soma (Soma (Num 3) (Num 2)) (Num 1)
+exSoma :: E
+exSoma = Soma (Soma (Num 3) (Num 2)) (Num 1)
 
-exErro :: E
-exErro = Soma (Num 3) TRUE
+exAnd :: E
+exAnd = And TRUE FALSE
+
+exLeq :: E
+exLeq = Leq (Num 3) (Num 5)
+
+exErro1 :: E
+exErro1 = Soma (Num 3) TRUE
+
+exErro2 :: E
+exErro2 = And (Leq (Num 3) FALSE) TRUE
+
+exErro3 :: E
+exErro3 = Leq (Soma (Num 3) TRUE) (Num 6)
+
+exErro4 :: E
+exErro4 = And TRUE (Num 6)
+
+
+
