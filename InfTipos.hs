@@ -31,12 +31,13 @@ main = return ()
   
 exSoma :: E
 exSoma = Soma (Soma (Num 3) (Num 2)) (Num 1)
-
+-- Resultado: INT
 exAnd :: E
 exAnd = And TRUE FALSE
-
+-- Resultado: BOOL
 exLeq :: E
 exLeq = Leq (Num 3) (Num 5)
+-- Resultado: BOOL
 
 exErro1 :: E
 exErro1 = Soma (Num 3) TRUE

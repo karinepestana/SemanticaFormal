@@ -15,19 +15,13 @@ mudaVar ((s,i):xs) v n
  | s == v     = ((s,n):xs)
  | otherwise  = (s,i): mudaVar xs v n
 
-data N = Num Int
+data AExp = Num Int|Var String|Som AExp AExp|Sub AExp AExp|Mul AExp AExp
  deriving(Show)
 
-data AExp = N|Var String|Som AExp AExp|Sub AExp AExp|Mul AExp AExp
+data BExp =	TRUE|FALSE|Not BExp|And BExp BExp|Or BExp BExp|Ig AExp AExp
  deriving(Show)
 
-data TF = TRUE|FALSE
- deriving(Show)
-
-data BExp =	TF|Not BExp|And BExp BExp|Or BExp BExp|Ig AExp AExp
- deriving(Show)
-
-data CExp = While BExp CExp| If BExp CExp CExp| Seq CExp CExp| Atrib AExp AExp|Skip
+data CExp = While BExp CExp| If BExp CExp CExp| Seq CExp CExp| Atrib AExp AExp| Skip| Try CExp CExp CExp| Catch| Throw
  deriving(Show)   
           
 
@@ -91,18 +85,20 @@ cSmallStep :: (CExp,Estado) -> (CExp,Estado)
 cSmallStep (Atrib (Var x) (Num n), s) = (Skip, (mudaVar s x n))
 cSmallStep (Atrib (Var x) e, s) = let ((Num n),sn) = aSmallStep (e,s) in (Atrib (Var x) (Num n),sn)
 
-cSmallStep (Seq Skip c, s) = cSmallStep(c, s)
-cSmallStep (Seq c1 c2, s) = let (cn,sn) = cSmallStep (c1,s)	in (cSmallStep (Seq cn c2,sn))
+cSmallStep (Seq Skip c, s) = (c, s)
+cSmallStep (Seq Throw c, s) = (Throw, s)
+cSmallStep (Seq c1 c2, s) = let (cn,sn) = cSmallStep (c1,s)	in (Seq cn c2,sn)
 
 
-cSmallStep (If TRUE c1 c2, s) = cSmallStep(c1,s)
-cSmallStep (If FALSE c1 c2, s) = cSmallStep(c2,s)
-cSmallStep (If b c1 c2, s) = let (bn,_) = bSmallStep(b,s) in (cSmallStep(If bn c1 c2, s))
+cSmallStep (If TRUE c1 c2, s) = (c1,s)
+cSmallStep (If FALSE c1 c2, s) = (c2,s)
+cSmallStep (If b c1 c2, s) = let (bn,_) = bSmallStep(b,s) in (If bn c1 c2, s)
 
-cSmallStep (While b c, s) = cSmallStep(If b (Seq c (While b c)) Skip, s)
+cSmallStep (While b c, s) = (If b (Seq c (While b c)) Skip, s)
 
-cSmallStep(Skip, s) = (Skip, s)
-
+cSmallStep (Try Skip Catch c, s) = (Skip, s)
+cSmallStep (Try Throw Catch c, s) = (c, s)
+cSmallStep (Try c1 Catch c2, s) = let (cn, sn) = cSmallStep(c1, s) in (Try cn Catch c2, sn)
 
 meuEstado :: Estado
 meuEstado = [("x",3), ("y",0), ("z",0)]
@@ -110,30 +106,48 @@ meuEstado = [("x",3), ("y",0), ("z",0)]
 
 exemploSom :: AExp
 exemploSom = Som (Num 3) (Som (Var "x") (Var "y"))
+-- Resultado: 6
 exemploSub :: AExp
 exemploSub = Sub (Num 5) (Sub (Var "x") (Var "y"))
+-- Resultado: 2
 exemploMul :: AExp
 exemploMul = Mul (Num 5) (Mul (Var "x") (Var "y"))
+-- Resultado: 0
 
 -- RODANDO O EXEMPLO:
 -- Hugs> interpretA (exemplo, meuEstado)
 
 exemploAnd :: BExp
 exemploAnd = And (And TRUE (Not FALSE)) (And (Not (Not TRUE)) TRUE)
+-- Resultado: TRUE
 exemploOr :: BExp
 exemploOr = Or (Or TRUE (Not FALSE)) (Or (Not (Not TRUE)) TRUE)
+-- Resultado: TRUE
 exemploIg :: BExp
 exemploIg = Ig (Num 3) (Num 3)
+-- Resultado: TRUE
 
 -- *Main> interpretB (exemplo2,meuEstado)
 -- (TRUE,[("x",3),("y",0),("z",0)])
 
 exemploAtrib :: CExp
 exemploAtrib = Atrib (Var "y") (Num 3)
+-- Resultado: x=3; y=3;z=0
 exemploSeq :: CExp
 exemploSeq = Seq (Atrib (Var "y") (Num 3)) (Atrib (Var "z") (Num 2))
+-- Resultado: x=3;y=3;z=2
 exemploIf :: CExp
 exemploIf = If (And TRUE (Not TRUE)) (Atrib (Var "y") (Num 3)) (Atrib (Var "z") (Num 2))
+-- Resultado: x=3;y=0;z=2
 exemploWhile :: CExp
 exemploWhile = While (Ig (Var "y") (Var "z")) (Atrib (Var "y") (Num 3))
-
+-- Resultado: x=3;y=3;z-0
+exemploTry1 :: CExp
+exemploTry1 = Try (Seq Throw(Atrib (Var "y")(Num 5)))Catch (While (Ig (Var "y") (Var "z")) (Atrib (Var "y") (Num 3)))
+-- Resultado: x=3;y=3;z=0
+exemploTry2 :: CExp
+exemploTry2 = Try (Atrib (Var "z") (Som (Num 1)(Num 6))) Catch (Atrib (Var "x")(Num 1))
+-- Resultado: x=3;y=0;z=7
+exemploTry3 :: CExp
+exemploTry3 = Try (Seq Skip (Atrib (Var "z")(Num 1))) Catch (Atrib (Var "x")(Num 2))
+-- Resultado: x=3;y=0;z=1
